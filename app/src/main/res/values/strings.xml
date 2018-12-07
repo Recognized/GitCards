@@ -1,0 +1,7 @@
+<resources>
+  <string name="app_name">GitCards</string>
+  <string name="bad">Bad</string>
+  <string name="ok">OK</string>
+  <string name="good">Good</string>
+  <string name="sync">Sync</string>
+</resources>

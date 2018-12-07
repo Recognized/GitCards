@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<android.support.v7.widget.LinearLayoutCompat
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity" android:id="@+id/main_layout" android:orientation="vertical">
+
+  <android.support.v7.widget.Toolbar
+      android:id="@+id/toolbar"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:background="?attr/colorPrimary"
+      android:minHeight="?attr/actionBarSize">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:background="#00aaaaaa"
+        android:layout_gravity="end"
+        android:layout_height="match_parent">
+
+      <Button
+          android:text="@string/sync"
+          android:layout_width="wrap_content"
+          android:textColor="#fff"
+          android:layout_height="wrap_content"
+          android:textSize="16sp" android:background="?attr/colorPrimary" android:id="@+id/sync"/>
+
+    </LinearLayout>
+
+  </android.support.v7.widget.Toolbar>
+
+  <LinearLayout
+      android:orientation="vertical"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent" android:layout_weight="1">
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" android:layout_gravity="bottom|center_horizontal" android:layout_weight="1"
+        android:id="@+id/frontFrame">
+
+    </FrameLayout>
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" android:layout_gravity="top|center_horizontal" android:layout_weight="1"
+        android:id="@+id/backFrame">
+
+    </FrameLayout>
+  </LinearLayout>
+  <LinearLayout
+      android:orientation="horizontal"
+      android:layout_width="match_parent"
+      style="?android:attr/buttonBarStyle"
+      android:layout_height="40dp">
+    <Button
+        android:text="@string/bad"
+        android:layout_width="match_parent"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_height="wrap_content" android:id="@+id/bad_button"
+        android:gravity="center_vertical|center_horizontal"
+        android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
+        android:background="@android:color/holo_red_light" android:textColor="@android:color/background_light"/>
+    <Button
+        android:text="@string/ok"
+        android:layout_width="match_parent"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_height="wrap_content" android:id="@+id/ok_button"
+        android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
+        android:background="@android:color/holo_blue_light" android:textColor="@android:color/white"/>
+    <Button
+        android:text="@string/good"
+        android:layout_width="match_parent"
+        style="?android:attr/buttonBarButtonStyle"
+        android:layout_height="wrap_content" android:id="@+id/good_button"
+        android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
+        android:background="@android:color/holo_green_light" android:textColor="@android:color/background_light"/>
+  </LinearLayout>
+</android.support.v7.widget.LinearLayoutCompat>
