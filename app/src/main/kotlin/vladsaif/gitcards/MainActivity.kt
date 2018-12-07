@@ -2,20 +2,25 @@ package vladsaif.gitcards
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.util.DisplayMetrics
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.lb.auto_fit_textview.AutoResizeTextView
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
 import java.util.concurrent.TimeUnit.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.min
 import kotlin.random.Random
+
 
 class MainActivity : AppCompatActivity(), CoroutineScope {
 
@@ -29,7 +34,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
       withContext(Dispatchers.Main) {
         Toast.makeText(applicationContext, "Loaded cards: ${cards.size}", Toast.LENGTH_LONG).show()
         if (!hasCardsBefore && CardsHolder.hasCards) {
-          buttons.visibility = View.VISIBLE
+          buttonsFrame.visibility = View.VISIBLE
           cardsCarousel.next()
         }
       }
@@ -42,33 +47,74 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   val toolbar: Toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
   val frontFrame: FrameLayout by lazy { findViewById<FrameLayout>(R.id.frontFrame) }
   val backFrame: FrameLayout by lazy { findViewById<FrameLayout>(R.id.backFrame) }
-  val buttons: LinearLayout by lazy { findViewById<LinearLayout>(R.id.buttons) }
+  val buttonsFrame: LinearLayout by lazy { findViewById<LinearLayout>(R.id.buttons) }
 
   private var currentCard: PrioritizedCard? = null
 
+  @SuppressLint("SetTextI18n")
   private val cardsCarousel = iterator {
     for (card in CardsHolder.cards) {
       currentCard = card
       frontFrame.removeAllViews()
       backFrame.removeAllViews()
-      frontFrame.addView(card.card.getFrontView(applicationContext).formatFrontView())
-      backFrame.addView(card.card.getBackView(applicationContext).formatBackView())
+      buttonsFrame.visibility = View.GONE
+      frontFrame.addView(card.card.getFrontView(applicationContext))
+      backFrame.addView(Button(applicationContext).apply {
+        setOnClickListener {
+          onShowAnswerButtonClick()
+        }
+        text = "Show back card"
+        layoutParams =
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+              .apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.CENTER_VERTICAL
+              }
+      })
+      yield(Unit)
+      backFrame.removeAllViews()
+      buttonsFrame.visibility = View.VISIBLE
+      backFrame.addView(card.card.getBackView(applicationContext))
       yield(Unit)
     }
   }
 
+  private fun onShowAnswerButtonClick() {
+    cardsCarousel.next()
+  }
+
   private fun Card.getFrontView(context: Context): View {
     return when (this) {
-      is TextCard -> TextView(context).apply {
+      is TextCard -> AutoResizeTextView(context).apply {
         text = frontText
+        layoutParams =
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+              .apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+              }
+        format()
+        gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
       }
     }
   }
 
+  private fun AutoResizeTextView.format() {
+    textSize = 500.0f
+    setMinTextSize(20.0f)
+    setTextColor(Color.BLACK)
+    setPadding(30.toPx(), 10.toPx(), 30.toPx(), 10.toPx())
+  }
+
   private fun Card.getBackView(context: Context): View {
     return when (this) {
-      is TextCard -> TextView(context).apply {
+      is TextCard -> AutoResizeTextView(context).apply {
         text = backText
+        layoutParams =
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+              .apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+              }
+        format()
+        gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
       }
     }
   }
@@ -77,6 +123,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
+    toolbar.setTitleTextColor(Color.WHITE)
     setSupportActionBar(toolbar)
     findViewById<Button>(R.id.bad_button).setOnClickListener { onBadClick() }
     findViewById<Button>(R.id.ok_button).setOnClickListener { onOkClick() }
@@ -86,34 +133,20 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
   @SuppressLint("SetTextI18n")
   private fun startShowing() {
-    if (CardsHolder.hasCards && buttons.visibility == View.INVISIBLE) {
-      buttons.visibility = View.VISIBLE
+    if (CardsHolder.hasCards) {
+      backFrame.removeAllViews()
+      buttonsFrame.visibility = View.VISIBLE
       cardsCarousel.next()
     } else {
       frontFrame.addView(TextView(applicationContext).apply {
         text = "No cards available"
-      }.formatFrontView())
+        layoutParams =
+            FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+              .apply {
+                gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+              }
+      })
     }
-  }
-
-  private fun View.formatFrontView(): View {
-    layoutParams =
-        LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-          .apply {
-            gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
-          }
-    setPadding(5, 5, 5, 5)
-    return this
-  }
-
-  private fun View.formatBackView(): View {
-    layoutParams =
-        LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
-          .apply {
-            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
-          }
-    setPadding(5, 5, 5, 5)
-    return this
   }
 
   override fun onStart() {
@@ -181,5 +214,11 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
   private enum class MemoryStrength(val change: Int) {
     BAD(-1000), OK(-10000), GOOD(-100000);
+  }
+
+  companion object {
+    fun Int.toPx(): Int {
+      return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), DisplayMetrics()).toInt()
+    }
   }
 }

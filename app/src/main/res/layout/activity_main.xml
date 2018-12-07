@@ -12,21 +12,23 @@
       android:id="@+id/toolbar"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:background="?attr/colorAccent"
+      android:background="@color/colorPrimary"
       android:minHeight="?attr/actionBarSize">
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:background="#00aaaaaa"
         android:layout_gravity="end"
         android:layout_height="match_parent">
 
       <Button
-          android:text="@string/sync"
+          style="@style/Widget.AppCompat.Button.Colored"
+          android:theme="@style/Sync.Button"
           android:layout_width="wrap_content"
           android:textColor="#fff"
           android:layout_height="wrap_content"
-          android:textSize="16sp" android:background="?attr/colorAccent" android:id="@+id/sync"/>
+          android:textSize="16sp"
+          android:id="@+id/sync"
+          android:text="@string/sync"/>
 
     </LinearLayout>
 
@@ -57,24 +59,27 @@
     <Button
         android:text="@string/bad"
         android:layout_width="match_parent"
-        style="?android:attr/buttonBarButtonStyle"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:theme="@style/Bad.Button"
         android:layout_height="wrap_content" android:id="@+id/bad_button"
         android:gravity="center_vertical|center_horizontal"
         android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
-        android:background="@android:color/holo_red_light" android:textColor="@android:color/background_light"/>
+        android:textColor="@android:color/background_light"/>
     <Button
         android:text="@string/ok"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:theme="@style/OK.Button"
         android:layout_width="match_parent"
-        style="?android:attr/buttonBarButtonStyle"
         android:layout_height="wrap_content" android:id="@+id/ok_button"
         android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
-        android:background="@android:color/holo_blue_light" android:textColor="@android:color/white"/>
+        android:textColor="@android:color/white"/>
     <Button
         android:text="@string/good"
+        style="@style/Widget.AppCompat.Button.Colored"
+        android:theme="@style/Good.Button"
         android:layout_width="match_parent"
-        style="?android:attr/buttonBarButtonStyle"
         android:layout_height="wrap_content" android:id="@+id/good_button"
         android:layout_gravity="center_vertical|center_horizontal" android:layout_weight="1"
-        android:background="@android:color/holo_green_light" android:textColor="@android:color/background_light"/>
+        android:textColor="@android:color/background_light"/>
   </LinearLayout>
 </android.support.v7.widget.LinearLayoutCompat>
