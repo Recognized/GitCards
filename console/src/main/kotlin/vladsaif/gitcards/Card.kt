@@ -44,6 +44,7 @@ suspend fun fetchCards(): List<Card> {
       method = HttpMethod.Get
     }
   }
+  println(call.response.readText())
   return Gson().fromJson<List<Card.Descriptor>>(
     call.response.readText(),
     (object : TypeToken<List<Card.Descriptor>>() {}).type
