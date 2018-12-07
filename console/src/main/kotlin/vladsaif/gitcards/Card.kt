@@ -51,9 +51,9 @@ sealed class Card(val id: Int) {
 
 class TextCard(id: Int, val frontText: String, val backText: String) : Card(id)
 
-suspend fun fetchCards(): List<Card> {
+suspend fun fetchCards(url: String): List<Card> {
   val call = HttpClient(Android).use { client ->
-    client.call("https://raw.githubusercontent.com/Recognized/GitCards/master/cards.json") {
+    client.call(url) {
       method = HttpMethod.Get
     }
   }
@@ -86,32 +86,55 @@ class PrioritizedCard(val card: Card) : Comparable<PrioritizedCard> {
 
   fun toDescriptor() = Descriptor(this)
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is PrioritizedCard) return false
+
+    if (card != other.card) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return card.hashCode()
+  }
+
   companion object {
     const val DEFAULT_PRIORITY = 1 shl 16
-    val COMPARATOR = kotlin.Comparator<PrioritizedCard> { a, b -> a.priority - b.priority }
+    val COMPARATOR = kotlin.Comparator<PrioritizedCard> { a, b ->
+      if (a.card.id == b.card.id) return@Comparator 0
+      val res = b.priority - a.priority
+      if (res != 0) res else a.card.id - b.card.id
+    }
   }
 }
 
 object CardsHolder {
   private val cardLock = ReentrantLock()
   private val allCards = mutableSetOf<PrioritizedCard>()
-  private var cardsQueue = PriorityQueue<PrioritizedCard>(PrioritizedCard.COMPARATOR.reversed())
+  private val removed = mutableSetOf<PrioritizedCard>()
+  private var cardsQueue = TreeSet<PrioritizedCard>(PrioritizedCard.COMPARATOR)
 
   val cards = sequence {
     if (cardLock.withLock { cardsQueue.isEmpty() }) return@sequence
     while (true) {
       val card = cardLock.withLock {
-        cardsQueue.poll()
+        val first = cardsQueue.first()
+        cardsQueue.remove(first)
+        first
       }
       yield(card)
       cardLock.withLock {
-        cardsQueue.add(card)
+        if (!removed.remove(card)) {
+          cardsQueue.add(card)
+        }
       }
     }
   }
 
   fun removeCard(card: PrioritizedCard) {
     cardLock.withLock {
+      removed.add(card)
       allCards.remove(card)
       cardsQueue.remove(card)
     }
@@ -120,7 +143,13 @@ object CardsHolder {
   fun loadCards(newCards: List<Card>) {
     val newQueue = newCards.map { PrioritizedCard(it) }.toMutableSet()
     cardLock.withLock {
-      newQueue.removeIf { it in allCards }
+      val iter = newQueue.iterator()
+      while (iter.hasNext()) {
+        val elem = iter.next()
+        if (elem in allCards) {
+          iter.remove()
+        }
+      }
       allCards.addAll(newQueue)
       cardsQueue.addAll(newQueue)
     }
@@ -129,12 +158,15 @@ object CardsHolder {
   fun loadPrioritizedCards(newCards: List<PrioritizedCard>) {
     val set = newCards.toMutableSet()
     cardLock.withLock {
-      for (x in set) {
-        allCards.removeIf { it in set }
-        allCards.addAll(set)
-        cardsQueue.clear()
-        cardsQueue.addAll(allCards)
+      val iter = allCards.iterator()
+      while (iter.hasNext()) {
+        if (iter.next() in set) {
+          iter.remove()
+        }
       }
+      allCards.addAll(set)
+      cardsQueue.clear()
+      cardsQueue.addAll(allCards)
     }
   }
 

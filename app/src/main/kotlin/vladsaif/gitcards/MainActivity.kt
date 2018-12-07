@@ -2,7 +2,6 @@ package vladsaif.gitcards
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AlertDialog
@@ -16,6 +15,7 @@ import android.widget.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.lb.auto_fit_textview.AutoResizeTextView
+import io.ktor.http.Url
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.actor
 import java.util.concurrent.TimeUnit.*
@@ -30,14 +30,23 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   @ObsoleteCoroutinesApi
   private val syncActor = actor<Unit>(Dispatchers.IO) {
     for (x in channel) {
-      val cards = fetchCards()
-      val hasCardsBefore = CardsHolder.hasCards
-      CardsHolder.loadCards(cards)
-      withContext(Dispatchers.Main) {
-        Toast.makeText(applicationContext, "Loaded cards: ${cards.size}", Toast.LENGTH_LONG).show()
-        if (!hasCardsBefore && CardsHolder.hasCards) {
-          buttonsFrame.visibility = View.VISIBLE
-          cardsCarousel.next()
+      try {
+        val url = withContext(Dispatchers.Main) {
+          getPreferences(Context.MODE_PRIVATE).getString(
+            "url", "https://raw.githubusercontent.com/Recognized/GitCards/master/cards.json"
+          )
+        }
+        val cards = fetchCards(url)
+        CardsHolder.loadCards(cards)
+        withContext(Dispatchers.Main) {
+          Toast.makeText(applicationContext, "Loaded cards: ${cards.size}", Toast.LENGTH_LONG).show()
+          if (CardsHolder.hasCards && currentCard == null) {
+            startShowing()
+          }
+        }
+      } catch (ex: Throwable) {
+        withContext(Dispatchers.Main) {
+          Toast.makeText(applicationContext, "Try sync again", Toast.LENGTH_LONG).show()
         }
       }
     }
@@ -135,9 +144,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
   private fun startShowing() {
     if (CardsHolder.hasCards) {
+      frontFrame.removeAllViews()
       backFrame.removeAllViews()
       buttonsFrame.visibility = View.VISIBLE
+      val old = currentCard
       cardsCarousel.next()
+      if (old == currentCard) {
+        cardsCarousel.next()
+      }
     } else {
       setNoCardsAvailableState()
     }
@@ -184,6 +198,41 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   @ObsoleteCoroutinesApi
   private fun sync() {
     syncActor.offer(Unit)
+  }
+
+  private fun setUrl() {
+    val builder = AlertDialog.Builder(this)
+    builder.setTitle("Set data url")
+    val view = LayoutInflater.from(this).inflate(R.layout.set_url, null)
+    builder.setView(view)
+    val input by lazy { view.findViewById<AppCompatEditText>(R.id.urlInput) }
+
+    fun CharSequence.validate(): Boolean {
+      return try {
+        Url(this.toString())
+        true
+      } catch (ex: Throwable) {
+        false
+      }
+    }
+    input.setText(getPreferences(Context.MODE_PRIVATE).getString(
+      "url", "https://raw.githubusercontent.com/Recognized/GitCards/master/cards.json"
+    ))
+    builder.setPositiveButton("Add") { dialog, _ ->
+      if (input.text.validate()) {
+        dialog.dismiss()
+        with(getPreferences(Context.MODE_PRIVATE).edit()) {
+          putString("url", input.text.toString())
+          apply()
+        }
+      } else {
+        Toast.makeText(this, "Input must be valid url", Toast.LENGTH_LONG).show()
+      }
+    }
+    builder.setNegativeButton("Cancel") { dialog, _ ->
+      dialog.cancel()
+    }
+    builder.show()
   }
 
   private fun onBadClick() {
@@ -233,18 +282,27 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     val inputBack by lazy { view.findViewById<AppCompatEditText>(R.id.inputBack) }
 
     fun CharSequence.validate(): Boolean {
-      return this.isNotBlank() && this.isNotEmpty()
+      return this@validate.isNotBlank() && this@validate.isNotEmpty()
     }
     builder.setPositiveButton("Add") { dialog, _ ->
       if (inputFront.text.validate() && inputBack.text.validate()) {
         dialog.dismiss()
         with(getPreferences(Context.MODE_PRIVATE)) {
           var id = getInt("id", -1)
-          CardsHolder.loadCards(listOf(TextCard(--id, inputFront.text.trim().toString(), inputBack.text.trim().toString())))
+          CardsHolder.loadCards(
+            listOf(
+              TextCard(
+                --id,
+                inputFront.text.trim().toString(),
+                inputBack.text.trim().toString()
+              )
+            )
+          )
           with(edit()) {
             putInt("id", id)
             apply()
           }
+          startShowing()
         }
 
       } else {
@@ -258,6 +316,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   }
 
   private fun removeCard() {
+    if (currentCard == null) return
     CardsHolder.removeCard(currentCard!!)
     if (!CardsHolder.hasCards) {
       currentCard = null
@@ -275,7 +334,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     val inflater = menuInflater
     inflater.inflate(R.menu.main_menu, menu)
     removeCardItem = menu.findItem(R.id.remove_card)
-    removeCardItem.isEnabled = currentCard != null
     return true
   }
 
@@ -286,6 +344,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
       R.id.sync -> sync()
       R.id.add_card -> addCard()
       R.id.remove_card -> removeCard()
+      R.id.url -> setUrl()
       else -> return super.onOptionsItemSelected(item)
     }
     return true

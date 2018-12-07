@@ -6,3 +6,4 @@ deceptive=обманчивый
 stake=stick used as support
 good riddance to them=скатертью дорога
 commute=заменить
+coax=persuade
