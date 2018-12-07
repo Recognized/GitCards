@@ -1,0 +1,4 @@
+fuzzy=unclear
+abolish=упразднить
+concise=short and informative
+acknowledge=выразить признательность

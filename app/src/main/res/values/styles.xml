@@ -1,20 +1,21 @@
 <resources>
 
   <!-- Base application theme. -->
-  <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+  <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
     <!-- Customize your theme here. -->
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
     <item name="colorAccent">@color/colorAccent</item>
+    <item name="android:actionMenuTextColor">@android:color/white</item>
   </style>
   <style name="Sync.Button" parent="ThemeOverlay.AppCompat">
     <item name="colorAccent">@color/colorPrimary</item>
   </style>
   <style name="Good.Button" parent="ThemeOverlay.AppCompat">
-    <item name="colorAccent">@android:color/holo_blue_light</item>
+    <item name="colorAccent">@android:color/holo_green_light</item>
   </style>
   <style name="OK.Button" parent="ThemeOverlay.AppCompat">
-    <item name="colorAccent">@android:color/holo_green_light</item>
+    <item name="colorAccent">@android:color/holo_blue_light</item>
   </style>
   <style name="Bad.Button" parent="ThemeOverlay.AppCompat">
     <item name="colorAccent">@android:color/holo_red_light</item>

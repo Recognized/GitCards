@@ -8,6 +8,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main(args: Array<String>) {
+  System.setIn(Files.newInputStream(Paths.get("words.txt")))
   try {
     val dataFile = if (args.isNotEmpty()) Paths.get(args.first()) else Paths.get("cards.json")
     val existingCards = mutableSetOf<Card>()
@@ -17,13 +18,14 @@ fun main(args: Array<String>) {
           .map { it.toCard() }
       })
     }
+    var maxId = existingCards.maxBy { it.id }?.id ?: 0
     while (true) {
       try {
         val line = readLine() ?: break
         if (line.toLowerCase() == ":q") break
         val (a, b) = line.split("=")
         if (a.isEmpty() || b.isEmpty()) throw Exception()
-        existingCards.add(TextCard(a.trim(), b.trim()))
+        existingCards.add(TextCard(++maxId, a.trim(), b.trim()))
       } catch (ex: Throwable) {
         println("Oops...")
       }

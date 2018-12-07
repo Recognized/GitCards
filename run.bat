@@ -1,1 +1,1 @@
-java -jar "console\build\libs\console.jar"
+java -jar console.jar

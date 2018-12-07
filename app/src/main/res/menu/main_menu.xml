@@ -1,0 +1,16 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="vladsaif.gitcards.MainActivity">
+  <item android:id="@+id/add_card"
+        android:icon="@drawable/baseline_add_white_48"
+        app:showAsAction="ifRoom"
+        android:title="Add"/>
+  <item android:id="@+id/remove_card"
+        android:icon="@drawable/baseline_delete_white_48"
+        app:showAsAction="ifRoom"
+        android:title="Remove"/>
+  <item android:id="@+id/sync"
+        android:title="Sync"
+        app:showAsAction="ifRoom|withText"/>
+</menu>

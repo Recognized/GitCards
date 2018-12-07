@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
-sealed class Card {
+sealed class Card(val id: Int) {
 
   class Descriptor(card: Card) {
     val type: String = card.javaClass.simpleName.substringAfterLast(".")
@@ -30,13 +30,26 @@ sealed class Card {
 
   fun toDescriptor() = Descriptor(this)
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Card) return false
+
+    if (id != other.id) return false
+
+    return true
+  }
+
+  override fun hashCode(): Int {
+    return id
+  }
+
   companion object {
 
     private fun formatClass(clazz: Class<*>): String = clazz.simpleName.substringAfterLast(".")
   }
 }
 
-data class TextCard(val frontText: String, val backText: String) : Card()
+class TextCard(id: Int, val frontText: String, val backText: String) : Card(id)
 
 suspend fun fetchCards(): List<Card> {
   val call = HttpClient(Android).use { client ->
@@ -52,7 +65,7 @@ suspend fun fetchCards(): List<Card> {
   }
 }
 
-data class PrioritizedCard(val card: Card) : Comparable<PrioritizedCard> {
+class PrioritizedCard(val card: Card) : Comparable<PrioritizedCard> {
   var priority: Int = DEFAULT_PRIORITY
   var timeLastChange: Long = TimeUnit.NANOSECONDS.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 
@@ -97,13 +110,18 @@ object CardsHolder {
     }
   }
 
+  fun removeCard(card: PrioritizedCard) {
+    cardLock.withLock {
+      allCards.remove(card)
+      cardsQueue.remove(card)
+    }
+  }
+
   fun loadCards(newCards: List<Card>) {
     val newQueue = newCards.map { PrioritizedCard(it) }.toMutableSet()
     cardLock.withLock {
+      newQueue.removeIf { it in allCards }
       allCards.addAll(newQueue)
-      for (card in cardsQueue) {
-        newQueue.removeIf { it.card == card.card }
-      }
       cardsQueue.addAll(newQueue)
     }
   }

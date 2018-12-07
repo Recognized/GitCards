@@ -2,14 +2,16 @@ package vladsaif.gitcards
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.os.Bundle
+import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.AppCompatEditText
 import android.support.v7.widget.Toolbar
 import android.util.DisplayMetrics
 import android.util.TypedValue
-import android.view.Gravity
-import android.view.View
+import android.view.*
 import android.widget.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -43,6 +45,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
   override val coroutineContext: CoroutineContext
     get() = mJob
   private val dataFile get() = filesDir.resolve("priorities")
+  private lateinit var removeCardItem: MenuItem
 
   val toolbar: Toolbar by lazy { findViewById<Toolbar>(R.id.toolbar) }
   val frontFrame: FrameLayout by lazy { findViewById<FrameLayout>(R.id.frontFrame) }
@@ -128,25 +131,31 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
     findViewById<Button>(R.id.bad_button).setOnClickListener { onBadClick() }
     findViewById<Button>(R.id.ok_button).setOnClickListener { onOkClick() }
     findViewById<Button>(R.id.good_button).setOnClickListener { onGoodClick() }
-    findViewById<Button>(R.id.sync).setOnClickListener { sync() }
   }
 
-  @SuppressLint("SetTextI18n")
   private fun startShowing() {
     if (CardsHolder.hasCards) {
       backFrame.removeAllViews()
       buttonsFrame.visibility = View.VISIBLE
       cardsCarousel.next()
     } else {
-      frontFrame.addView(TextView(applicationContext).apply {
-        text = "No cards available"
-        layoutParams =
-            FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
-              .apply {
-                gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
-              }
-      })
+      setNoCardsAvailableState()
     }
+  }
+
+  @SuppressLint("SetTextI18n")
+  fun setNoCardsAvailableState() {
+    backFrame.removeAllViews()
+    frontFrame.removeAllViews()
+    buttonsFrame.visibility = View.GONE
+    frontFrame.addView(TextView(applicationContext).apply {
+      text = "No cards available"
+      layoutParams =
+          FrameLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT)
+            .apply {
+              gravity = Gravity.CENTER_HORIZONTAL or Gravity.BOTTOM
+            }
+    })
   }
 
   override fun onStart() {
@@ -191,11 +200,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
 
   private fun onMemoryButtonClick(strength: MemoryStrength) {
     currentCard?.let {
+      val old = it.priority
       it.priority += scaleByTime(
         it.timeLastChange,
         strength.change + Random.nextInt(Math.abs(strength.change)) - Math.abs(strength.change) / 2
       )
       it.timeLastChange = NANOSECONDS.convert(System.currentTimeMillis(), MILLISECONDS)
+      val new = it.priority
+//      Toast.makeText(applicationContext, "Priority: $old -> $new", Toast.LENGTH_SHORT).show()
     }
     cardsCarousel.next()
   }
@@ -210,6 +222,73 @@ class MainActivity : AppCompatActivity(), CoroutineScope {
       else -> delta
     }
     return min(newDelta, -1)
+  }
+
+  private fun addCard() {
+    val builder = AlertDialog.Builder(this)
+    builder.setTitle("Add card")
+    val view = LayoutInflater.from(this).inflate(R.layout.add_card, null)
+    builder.setView(view)
+    val inputFront by lazy { view.findViewById<AppCompatEditText>(R.id.inputFront) }
+    val inputBack by lazy { view.findViewById<AppCompatEditText>(R.id.inputBack) }
+
+    fun CharSequence.validate(): Boolean {
+      return this.isNotBlank() && this.isNotEmpty()
+    }
+    builder.setPositiveButton("Add") { dialog, _ ->
+      if (inputFront.text.validate() && inputBack.text.validate()) {
+        dialog.dismiss()
+        with(getPreferences(Context.MODE_PRIVATE)) {
+          var id = getInt("id", -1)
+          CardsHolder.loadCards(listOf(TextCard(--id, inputFront.text.trim().toString(), inputBack.text.trim().toString())))
+          with(edit()) {
+            putInt("id", id)
+            apply()
+          }
+        }
+
+      } else {
+        Toast.makeText(this, "Input must not be empty or blank", Toast.LENGTH_LONG).show()
+      }
+    }
+    builder.setNegativeButton("Cancel") { dialog, _ ->
+      dialog.cancel()
+    }
+    builder.show()
+  }
+
+  private fun removeCard() {
+    CardsHolder.removeCard(currentCard!!)
+    if (!CardsHolder.hasCards) {
+      currentCard = null
+      setNoCardsAvailableState()
+    } else {
+      val removedCard = currentCard
+      cardsCarousel.next()
+      if (currentCard == removedCard) {
+        cardsCarousel.next()
+      }
+    }
+  }
+
+  override fun onCreateOptionsMenu(menu: Menu): Boolean {
+    val inflater = menuInflater
+    inflater.inflate(R.menu.main_menu, menu)
+    removeCardItem = menu.findItem(R.id.remove_card)
+    removeCardItem.isEnabled = currentCard != null
+    return true
+  }
+
+
+  @ObsoleteCoroutinesApi
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    when (item.itemId) {
+      R.id.sync -> sync()
+      R.id.add_card -> addCard()
+      R.id.remove_card -> removeCard()
+      else -> return super.onOptionsItemSelected(item)
+    }
+    return true
   }
 
   private enum class MemoryStrength(val change: Int) {
