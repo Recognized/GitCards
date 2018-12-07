@@ -1,7 +1,5 @@
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
-
 apply plugin: 'kotlin-android-extensions'
 
 android {
@@ -27,7 +25,6 @@ android {
 }
 
 dependencies {
-    compile (":console")
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.android.support:appcompat-v7:26.1.0'
@@ -40,5 +37,5 @@ dependencies {
     compile 'com.jakewharton:butterknife:8.4.0'
     kapt 'com.jakewharton:butterknife-compiler:8.4.0'
     testImplementation 'junit:junit:4.12'
-    compile project(path: ':console')
+    compile project(':console')
 }

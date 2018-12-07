@@ -12,7 +12,7 @@
       android:id="@+id/toolbar"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:background="?attr/colorPrimary"
+      android:background="?attr/colorAccent"
       android:minHeight="?attr/actionBarSize">
 
     <LinearLayout
@@ -26,7 +26,7 @@
           android:layout_width="wrap_content"
           android:textColor="#fff"
           android:layout_height="wrap_content"
-          android:textSize="16sp" android:background="?attr/colorPrimary" android:id="@+id/sync"/>
+          android:textSize="16sp" android:background="?attr/colorAccent" android:id="@+id/sync"/>
 
     </LinearLayout>
 
@@ -53,7 +53,7 @@
       android:orientation="horizontal"
       android:layout_width="match_parent"
       style="?android:attr/buttonBarStyle"
-      android:layout_height="40dp">
+      android:layout_height="40dp" android:id="@+id/buttons" android:visibility="invisible">
     <Button
         android:text="@string/bad"
         android:layout_width="match_parent"

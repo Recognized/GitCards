@@ -13,8 +13,8 @@ fun main(args: Array<String>) {
     val existingCards = mutableSetOf<Card>()
     if (Files.exists(dataFile)) {
       existingCards.addAll(dataFile.toFile().bufferedReader().use { reader ->
-        Gson().fromJson<List<String>>(reader, (object : TypeToken<List<String>>() {}).type)
-          .map { Card.deserialize(it) }
+        Gson().fromJson<List<Card.Descriptor>>(reader, (object : TypeToken<List<Card.Descriptor>>() {}).type)
+          .map { it.toCard() }
       })
     }
     while (true) {
@@ -28,8 +28,8 @@ fun main(args: Array<String>) {
         println("Oops...")
       }
     }
-    dataFile.toFile().outputStream().bufferedWriter().use {
-      it.append(Gson().toJson(existingCards.toList()))
+    dataFile.toFile().outputStream().bufferedWriter().use { writer ->
+      writer.append(Gson().toJson(existingCards.map { it.toDescriptor() }))
     }
   } catch (ex: Throwable) {
     println(ex.message)

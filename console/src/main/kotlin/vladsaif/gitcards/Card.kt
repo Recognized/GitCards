@@ -8,14 +8,13 @@ import io.ktor.client.engine.android.Android
 import io.ktor.client.response.readText
 import io.ktor.http.HttpMethod
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 sealed class Card {
 
-  fun serialize(): String = Gson().toJson(Descriptor(this))
-
-  private class Descriptor(card: Card) {
+  class Descriptor(card: Card) {
     val type: String = card.javaClass.simpleName.substringAfterLast(".")
     val content: String = Gson().toJson(card)
 
@@ -29,8 +28,9 @@ sealed class Card {
     }
   }
 
+  fun toDescriptor() = Descriptor(this)
+
   companion object {
-    fun deserialize(string: String): Card = Gson().fromJson(string, Descriptor::class.java).toCard()
 
     private fun formatClass(clazz: Class<*>): String = clazz.simpleName.substringAfterLast(".")
   }
@@ -40,44 +40,42 @@ data class TextCard(val frontText: String, val backText: String) : Card()
 
 suspend fun fetchCards(): List<Card> {
   val call = HttpClient(Android).use { client ->
-    client.call("https://raw.github...") {
+    client.call("https://raw.githubusercontent.com/Recognized/GitCards/master/cards.json") {
       method = HttpMethod.Get
     }
   }
-  return Gson().fromJson<List<String>>(call.response.readText(), (object : TypeToken<List<String>>() {}).type).map {
-    Card.deserialize(it)
+  return Gson().fromJson<List<Card.Descriptor>>(
+    call.response.readText(),
+    (object : TypeToken<List<Card.Descriptor>>() {}).type
+  ).map {
+    it.toCard()
   }
 }
 
 data class PrioritizedCard(val card: Card) : Comparable<PrioritizedCard> {
   var priority: Int = DEFAULT_PRIORITY
+  var timeLastChange: Long = TimeUnit.NANOSECONDS.convert(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 
   override fun compareTo(other: PrioritizedCard): Int {
     return priority - other.priority
   }
 
-  fun serialize(): String = Gson().toJson(Descriptor(this))
-
-  private class Descriptor(pCard: PrioritizedCard) {
+  class Descriptor(pCard: PrioritizedCard) {
     val priority: Int = pCard.priority
-    val cardDescriptor = pCard.card.serialize()
+    val cardDescriptor = pCard.card.toDescriptor()
 
     fun toPrioritizedCard(): PrioritizedCard = PrioritizedCard(
-      Card.deserialize(
-        cardDescriptor
-      )
+      cardDescriptor.toCard()
     ).apply {
       this@apply.priority = this@Descriptor.priority
     }
   }
 
+  fun toDescriptor() = Descriptor(this)
+
   companion object {
     const val DEFAULT_PRIORITY = 1 shl 16
     val COMPARATOR = kotlin.Comparator<PrioritizedCard> { a, b -> a.priority - b.priority }
-
-    fun deserialize(string: String): PrioritizedCard {
-      return Gson().fromJson(string, Descriptor::class.java).toPrioritizedCard()
-    }
   }
 }
 
