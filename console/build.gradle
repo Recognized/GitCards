@@ -38,7 +38,7 @@ jar {
         attributes 'Main-Class': 'vladsaif.gitcards.MainKt'
     }
 
-//    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { configurations.compileClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 compileKotlin {
