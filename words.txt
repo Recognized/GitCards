@@ -1,4 +1,8 @@
-fuzzy=unclear
+﻿fuzzy=unclear
 abolish=упразднить
 concise=short and informative
 acknowledge=выразить признательность
+deceptive=обманчивый
+stake=stick used as support
+good riddance to them=скатертью дорога
+commute=заменить
