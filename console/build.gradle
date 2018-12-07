@@ -8,11 +8,11 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation 'com.google.code.gson:gson:2.8.5'
-    implementation("io.ktor:ktor-client-android:$ktor_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0")
+    runtime "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    runtime 'com.google.code.gson:gson:2.8.5'
+    runtime("io.ktor:ktor-client-android:$ktor_version")
+    runtime("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.0.0")
+    runtime("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.0")
     testImplementation 'junit:junit:4.12'
 }
 
@@ -31,6 +31,14 @@ sourceSets {
             }
         }
     }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'vladsaif.gitcards.MainKt'
+    }
+
+    from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
 compileKotlin {

@@ -1,0 +1,1 @@
+java -jar "console\build\libs\console.jar"
