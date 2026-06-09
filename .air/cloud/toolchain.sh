@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install JDK 11 via SDKMAN if not already available
-if ! command -v java &>/dev/null || ! java -version 2>&1 | grep -q 'version "1[1-9]\|version "[2-9][0-9]'; then
-  if ! command -v sdk &>/dev/null; then
-    export SDKMAN_DIR="$HOME/.sdkman"
-    curl -s "https://get.sdkman.io" | bash
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
-  else
-    source "$HOME/.sdkman/bin/sdkman-init.sh"
-  fi
-  sdk install java 11.0.23-tem
+# Android Gradle plugin 3.1.0 requires JDK 8 or 11; JDK 25 (JBR default) is incompatible.
+# Install JDK 11 via SDKMAN so startup.sh can use it.
+export SDKMAN_DIR="$HOME/.sdkman"
+
+if [ ! -f "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
+  curl -s "https://get.sdkman.io" | bash
 fi
 
-# Ensure JAVA_HOME is set for future scripts
-if command -v sdk &>/dev/null; then
-  source "$HOME/.sdkman/bin/sdkman-init.sh"
+source "$SDKMAN_DIR/bin/sdkman-init.sh"
+
+if ! sdk list java 2>/dev/null | grep -q "11.*tem.*installed"; then
+  sdk install java 11.0.23-tem < /dev/null
 fi
 
+sdk default java 11.0.23-tem
 java -version
 echo "Toolchain setup complete."
