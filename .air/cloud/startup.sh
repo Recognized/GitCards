@@ -8,12 +8,11 @@ if [ -d "$JDK_DIR" ]; then
   export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-# Gradle requires sdk.dir or ANDROID_HOME even just to configure the :app project.
-# Create a minimal stub so Gradle configuration succeeds; actual Android builds need a real SDK.
-if [ -z "${ANDROID_HOME:-}" ] && [ ! -f local.properties ]; then
-  ANDROID_STUB="$HOME/.android-sdk-stub"
-  mkdir -p "$ANDROID_STUB"
-  echo "sdk.dir=$ANDROID_STUB" > local.properties
+# Use Android SDK installed by toolchain.sh
+ANDROID_SDK="$HOME/android-sdk"
+if [ -d "$ANDROID_SDK" ]; then
+  export ANDROID_HOME="$ANDROID_SDK"
+  export PATH="$ANDROID_SDK/cmdline-tools/latest/bin:$ANDROID_SDK/platform-tools:$PATH"
 fi
 
 # Ensure gradlew is executable
