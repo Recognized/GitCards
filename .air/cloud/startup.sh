@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Use JDK 11 installed by toolchain.sh (Android Gradle plugin 3.1.0 needs Java <= 11)
-export SDKMAN_DIR="$HOME/.sdkman"
-if [ -f "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
-  source "$SDKMAN_DIR/bin/sdkman-init.sh"
-  sdk use java 11.0.23-tem
+JDK_DIR="$HOME/jdk11"
+if [ -d "$JDK_DIR" ]; then
+  export JAVA_HOME="$JDK_DIR"
+  export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
 # Gradle requires sdk.dir or ANDROID_HOME even just to configure the :app project.

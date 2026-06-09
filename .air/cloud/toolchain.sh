@@ -1,20 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Android Gradle plugin 3.1.0 requires JDK 8 or 11; JDK 25 (JBR default) is incompatible.
-# Install JDK 11 via SDKMAN so startup.sh can use it.
-export SDKMAN_DIR="$HOME/.sdkman"
+# Android Gradle plugin 3.1.0 requires JDK <= 11; default JBR 25 is incompatible.
+# Install Temurin JDK 11 from Adoptium into ~/jdk11.
+JDK_DIR="$HOME/jdk11"
 
-if [ ! -f "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
-  curl -s "https://get.sdkman.io" | bash
+if [ ! -d "$JDK_DIR" ]; then
+  echo "Downloading Temurin JDK 11..."
+  TMPFILE="$(mktemp /tmp/jdk11.XXXXXX.tar.gz)"
+  curl -L --proxy "${HTTPS_PROXY:-}" \
+    "https://api.adoptium.net/v3/binary/latest/11/ga/linux/x64/jdk/hotspot/normal/eclipse" \
+    -o "$TMPFILE"
+  mkdir -p "$JDK_DIR"
+  tar -xzf "$TMPFILE" -C "$JDK_DIR" --strip-components=1
+  rm -f "$TMPFILE"
 fi
 
-source "$SDKMAN_DIR/bin/sdkman-init.sh"
-
-if ! sdk list java 2>/dev/null | grep -q "11.*tem.*installed"; then
-  sdk install java 11.0.23-tem < /dev/null
-fi
-
-sdk default java 11.0.23-tem
+export JAVA_HOME="$JDK_DIR"
+export PATH="$JAVA_HOME/bin:$PATH"
 java -version
+echo "JDK 11 ready at $JDK_DIR"
 echo "Toolchain setup complete."
